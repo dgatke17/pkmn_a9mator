@@ -29,30 +29,32 @@ if is_windows():
 
 
 def cli() -> None:
-	program = ArgumentParser(formatter_class = lambda prog: HelpFormatter(prog, max_help_position = 200))
-	program.add_argument('--onnxruntime', help = wording.get('help.install_dependency').format(dependency = 'onnxruntime'), choices = ONNXRUNTIMES.keys())
-	program.add_argument('--skip-conda', help = wording.get('help.skip_conda'), action = 'store_true')
-	program.add_argument('-v', '--version', version = metadata.get('name') + ' ' + metadata.get('version'), action = 'version')
-	run(program)
+    program = ArgumentParser(formatter_class=lambda prog: HelpFormatter(prog, max_help_position=200))
+    program.add_argument('--onnxruntime', help=wording.get('help.install_dependency').format(dependency='onnxruntime'), choices=ONNXRUNTIMES.keys())
+    program.add_argument('--skip-conda', help=wording.get('help.skip_conda'), action='store_true')
+    program.add_argument('-v', '--version', version=metadata.get('name') + ' ' + metadata.get('version'), action='version')
+    args = program.parse_args()
 
+    run(args, default_onnxruntime='cuda-12.2')
 
-def run(program : ArgumentParser) -> None:
-	args = program.parse_args()
-	python_id = 'cp' + str(sys.version_info.major) + str(sys.version_info.minor)
+def run(args, default_onnxruntime=None) -> None:
+    python_id = 'cp' + str(sys.version_info.major) + str(sys.version_info.minor)
 
-	if not args.skip_conda and 'CONDA_PREFIX' not in os.environ:
-		sys.stdout.write(wording.get('conda_not_activated') + os.linesep)
-		sys.exit(1)
-	if args.onnxruntime:
-		answers =\
-		{
-			'onnxruntime': args.onnxruntime
-		}
-	else:
-		answers = inquirer.prompt(
-		[
-			inquirer.List('onnxruntime', message = wording.get('help.install_dependency').format(dependency = 'onnxruntime'), choices = list(ONNXRUNTIMES.keys()))
-		])
+    if not args.skip_conda and 'CONDA_PREFIX' not in os.environ:
+        sys.stdout.write(wording.get('conda_not_activated') + os.linesep)
+        sys.exit(1)
+
+    if args.onnxruntime:
+        answers = {'onnxruntime': args.onnxruntime}
+    else:
+        if default_onnxruntime:
+            answers = {'onnxruntime': default_onnxruntime}
+        else:
+            answers = inquirer.prompt(
+                [
+                    inquirer.List('onnxruntime', message=wording.get('help.install_dependency').format(dependency='onnxruntime'), choices=list(ONNXRUNTIMES.keys()))
+                ]
+            )
 	if answers:
 		onnxruntime = answers['onnxruntime']
 		onnxruntime_name, onnxruntime_version = ONNXRUNTIMES[onnxruntime]
